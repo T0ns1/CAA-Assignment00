@@ -3,6 +3,8 @@ package utils;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 public class SessionBlob {
 	private final byte[] sessionKey;
@@ -17,7 +19,7 @@ public class SessionBlob {
     public byte[] getNoncePrefix() { return noncePrefix; }
 
     public byte[] serialize() throws IOException {
-        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(baos);
         out.writeInt(sessionKey.length);
         out.write(sessionKey);
@@ -28,7 +30,7 @@ public class SessionBlob {
     }
 
     public static SessionBlob deserialize(byte[] data) throws IOException {
-        DataInputStream in = new DataInputStream(new java.io.ByteArrayInputStream(data));
+        DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
         int keyLen = in.readInt();
         byte[] sessionKey = new byte[keyLen];
         in.readFully(sessionKey);

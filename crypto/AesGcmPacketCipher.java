@@ -35,8 +35,8 @@ public class AesGcmPacketCipher implements PacketCipher{
         cipher.updateAAD(ByteBuffer.allocate(SEQ_LEN).putLong(seq).array());
         byte[] ciphertext = cipher.doFinal(plain, 0, len);
 
-        ByteBuffer out = ByteBuffer.allocate(SEQ_LEN + NONCE_LEN + ciphertext.length);
-        out.putLong(seq).put(nonce).put(ciphertext);
+        ByteBuffer out = ByteBuffer.allocate(SEQ_LEN + ciphertext.length);
+        out.putLong(seq).put(ciphertext);
         return out.array();
 	}
 
@@ -44,12 +44,11 @@ public class AesGcmPacketCipher implements PacketCipher{
 	public byte[] decrypt(byte[] packet, int len) throws Exception {
 		ByteBuffer in = ByteBuffer.wrap(packet, 0, len);
         long seq = in.getLong();
-        if (seq <= lastReceivedSeq) throw new SecurityException("Replay rejected");
+        if (seq <= lastReceivedSeq) throw new SecurityException("Replay/Dupe rejected");
 
-        byte[] nonce = new byte[NONCE_LEN];
-        in.get(nonce);
+	byte[] nonce = buildNonce(seq);
 
-        byte[] ciphertext = new byte[len - SEQ_LEN - NONCE_LEN];
+        byte[] ciphertext = new byte[len - SEQ_LEN];
         in.get(ciphertext);
 
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");

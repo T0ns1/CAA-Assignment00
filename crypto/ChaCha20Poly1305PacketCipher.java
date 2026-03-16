@@ -35,8 +35,8 @@ public class ChaCha20Poly1305PacketCipher implements PacketCipher{
         cipher.updateAAD(ByteBuffer.allocate(SEQ_LEN).putLong(seq).array());
         byte[] ciphertext = cipher.doFinal(plain, 0, len);
 
-        ByteBuffer out = ByteBuffer.allocate(SEQ_LEN + NONCE_LEN + ciphertext.length);
-        out.putLong(seq).put(nonce).put(ciphertext);
+        ByteBuffer out = ByteBuffer.allocate(SEQ_LEN + ciphertext.length);
+        out.putLong(seq).put(ciphertext);
         return out.array();
 	}
 
@@ -46,14 +46,13 @@ public class ChaCha20Poly1305PacketCipher implements PacketCipher{
 		long seq = in.getLong();
         if (seq <= lastReceivedSeq) throw new SecurityException("Replay or dupe rejected");
         
-        byte[] nonce = new byte[NONCE_LEN];
-        in.get(nonce);
+        byte[] nonce = buildNonce(seq);
         
         Cipher cipher = Cipher.getInstance("ChaCha20-Poly1305");
         cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(nonce));
         cipher.updateAAD(ByteBuffer.allocate(SEQ_LEN).putLong(seq).array());
         
-        byte[] ciphertext = new byte[len - SEQ_LEN - NONCE_LEN];
+        byte[] ciphertext = new byte[len - SEQ_LEN];
         in.get(ciphertext);
         
         byte[] plain = cipher.doFinal(ciphertext);
